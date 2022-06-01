@@ -29,14 +29,13 @@ rule all:
         expand("03.Germline.freebayes/{sample}/{sample}.freebayes.flt.vcf.gz.anno/Merge.Anno.matrix.gz", sample=sampledic.keys()), #(freebayes)
         expand("03.Germline.Strelka/{sample}/results/variants/variants.vcf.gz.anno/Merge.Anno.matrix.gz", sample=sampledic.keys()), #(strelka)
         
-        
-        expand("04.SV.Delly/{sample}/{sample}.delly.vcf.gz", sample=sampledic.keys()), #(Delly)
+        expand("04.SV.Delly/{sample}/{sample}.delly.sv.vcf.gz", sample=sampledic.keys()), #(Delly)
         expand("04.SV.Gridss/{sample}/{sample}.gridss.vcf.gz", sample=sampledic.keys()), #(Gridss)
         
         expand("02.Alignment/WindowDepth5K/{sample}/{sample}.bin.5K.depth.gz", sample=sampledic.keys()), #(WindowDepth)
         expand("05.CNV.Canvas/SingleSample/{sample}/CNV.vcf.gz", sample=sampledic.keys()), #(Canvas)
         
-        expand("06.MEI.Scramble/{sample}/{sample}.mei.txt", sample=sampledic.keys()), #(Scramble)
+        expand("06.MEI.Scramble/{sample}/{sample}.scramble_MEIs.txt", sample=sampledic.keys()), #(Scramble)
 
         
 
@@ -505,16 +504,18 @@ rule Lofreq:
         extra = ' --gres=lscratch:50 ',
     shell:
         """
-        module load {config[modules][lofreq]} {config[modules][samtools]}
+        module load {config[modules][lofreq]} 
         lofreq call-parallel \
           --pp-threads {threads} \
           -f {config[references][fasta]} \
           -o {params.vcf} \
           --call-indels \
           {input.bam}  >> {log.out} 2>> {log.err}
+        module load {config[modules][samtools]}
         bgzip {params.vcf} >> {log.out} 2>> {log.err}
         tabix -p vcf {output.vgz}  >> {log.out} 2>> {log.err}
         """
+        # Do not load samtools with lofreq at the same time, the htslib will conflict with the one used by lofreq
 rule anno_Lofreq:
     input:
         vgz="03.Germline.Lofreq/{sample}/{sample}.lofreq.vcf.gz",
@@ -558,7 +559,6 @@ rule Freebayes:
           -f {config[references][fasta]} \
           {input.bam} 2>> {log.err}|\
         bgzip > {output.vgz}
-        tabix -f -p vcf {output.vgz} >> {log.out} 2>> {log.err}
         """
         
 rule anno_Freebayes:
@@ -577,6 +577,7 @@ rule anno_Freebayes:
     shell:
         """
         module load {config[modules][vcflib]} {config[modules][samtools]}
+        tabix -f -p vcf {input.vgz} >> {log.out} 2>> {log.err}
         vcffilter \
           -f "QUAL > 20 & DP > 8 & QUAL / AO > 10 & SAF > 0 & SAR > 0 & RPR > 1 & RPL > 1" \
           {input.vgz} 2>{log.err} |bgzip > {output.fltvgz}
@@ -695,6 +696,7 @@ rule Canvas:
         bam="02.Alignment/Level3/{sample}/{sample}.BQSR.bam",
         vgz="03.Germline.Strelka/{sample}/results/variants/variants.vcf.gz",
     output:
+        folder=directory("05.CNV.Canvas/SingleSample/{sample}"),
         vgz="05.CNV.Canvas/SingleSample/{sample}/CNV.vcf.gz",
     params:
         outdir=directory("05.CNV.Canvas/SingleSample/"),
@@ -716,8 +718,8 @@ rule Canvas:
           -f /fdb/Canvas/GRCh38/filter13.bed \
           --sample-b-allele-vcf {config[workdir]}/{input.vgz} \
           -o {wildcards.sample} >> {log.out} 2>> {log.err}
-        ls {wildcards.sample} >> {log.out} 2>> {log.err}
-        tabix -p vcf {wildcards.sample}/cnv.vcf.gz >> {log.out} 2>> {log.err}
+        ls -l {wildcards.sample} >> {log.out} 2>> {log.err}
+        tabix -p vcf {wildcards.sample}/CNV.vcf.gz >> {log.out} 2>> {log.err}
         rm -rf {wildcards.sample}/TempCNV >> {log.out} 2>> {log.err}
         """
         
