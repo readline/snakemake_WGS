@@ -6,7 +6,7 @@ def samplesheet(sspath):
     df = pd.read_csv(sspath, sep='\t', usecols=range(15))
     idx = []
     for i in df.index:
-        idx.append('%s.%s'%(df.loc[i,'SM'], df.loc[i,'ID']))
+        idx.append('%s.%s.%s'%(df.loc[i,'SM'], df.loc[i,'LB'], df.loc[i,'PU']))
     df.index=idx
     sample = {}
     lib = {}
