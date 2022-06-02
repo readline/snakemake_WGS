@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 
 def samplesheet(sspath):
-    df = pd.read_csv(sspath, sep='\t')
+    df = pd.read_csv(sspath, sep='\t', usecols=range(15))
     idx = []
     for i in df.index:
         idx.append('%s.%s'%(df.loc[i,'SM'], df.loc[i,'ID']))
