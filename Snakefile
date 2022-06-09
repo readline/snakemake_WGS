@@ -175,7 +175,7 @@ rule chrMbam:
         bam="02.Alignment/Level3/{sample}/{sample}.sort.md.bam",
         bai="02.Alignment/Level3/{sample}/{sample}.sort.md.bam.bai",
     output:
-        mbam=protected("02.Alignment/chrM/{sample}/{sample}.bam"),
+        mbam="02.Alignment/chrM/{sample}/{sample}.bam",
     log:
         out = snakedir+"/logs/B4.chrMbam/{sample}.o",
         err = snakedir+"/logs/B4.chrMbam/{sample}.e",
@@ -258,7 +258,7 @@ rule BQSR_mergeB:
     input:
         expand("02.Alignment/Level3/{{sample}}/{{sample}}.{itv}.BQSR.bam", itv=itv4),
     output:
-        bam=protected("02.Alignment/Level3/{sample}/{sample}.BQSR.bam"),
+        bam="02.Alignment/Level3/{sample}/{sample}.BQSR.bam",
     log:
         out = snakedir+"/logs/B5.BQSR/{sample}.B.o",
         err = snakedir+"/logs/B5.BQSR/{sample}.B.e",
@@ -761,7 +761,7 @@ rule Scramble:
         err = snakedir+"/logs/F01.Scramble/{sample}.e",
     threads:  16
     resources:
-        mem  = '64g',
+        mem  = '256g',
         extra = ' --gres=lscratch:50 ',
     shell:
         """
