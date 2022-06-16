@@ -664,31 +664,36 @@ rule Delly:
         svgz="04.SV.Delly/{sample}/{sample}.delly.sv.vcf.gz",
         cnv= "05.CNV.Delly/{sample}/{sample}.delly.cnv.bcf",
         cvgz="05.CNV.Delly/{sample}/{sample}.delly.cnv.vcf.gz",
+    params:
+        svdir = "04.SV.Delly/{sample}",
+        cnvdir= "05.CNV.Delly/{sample}",
     log:
         out = snakedir+"/logs/D02.Delly/{sample}.o",
         err = snakedir+"/logs/D02.Delly/{sample}.e",
-    threads:  2
+    threads:  4
     resources:
-        mem  = '8g',
+        mem  = '16g',
         extra = ' --gres=lscratch:20 ',
     shell:
         """
         module load {config[modules][delly]} {config[modules][bcftools]} {config[modules][samtools]}
+        cd {params.svdir}
         delly call \
           -g {config[references][fasta]} \
           -x {config[references][delly]}/human.hg38.excl.tsv \
-          -o {output.sv} \
-          {input.bam} > {log.out} 2> {log.err}
+          -o {config[workdir]}/{output.sv} \
+          {config[workdir]}/{input.bam} > {log.out} 2> {log.err}
+        cd {params.cnvdir}
         delly cnv \
           -g {config[references][fasta]} \
           -m {config[references][delly]}/Homo_sapiens.GRCh38.dna.primary_assembly.fa.r101.s501.blacklist.gz \
-          -l {output.sv} \
-          -o {output.cnv} \
-          {input.bam} >> {log.out} 2>> {log.err}
-        bcftools view {output.sv}|bgzip > {output.svgz} 2>>{log.err}
-        bcftools view {output.cnv}|bgzip > {output.cvgz} 2>>{log.err}
-        tabix -p vcf {output.svgz}
-        tabix -p vcf {output.cvgz}
+          -l {config[workdir]}/{output.sv} \
+          -o {config[workdir]}/{output.cnv} \
+          {config[workdir]}/{input.bam} >> {log.out} 2>> {log.err}
+        bcftools view {config[workdir]}/{output.sv}|bgzip > {config[workdir]}/{output.svgz} 2>>{log.err}
+        bcftools view {config[workdir]}/{output.cnv}|bgzip > {config[workdir]}/{output.cvgz} 2>>{log.err}
+        tabix -p vcf {config[workdir]}/{output.svgz}
+        tabix -p vcf {config[workdir]}/{output.cvgz}
         """
         
 rule Canvas:
