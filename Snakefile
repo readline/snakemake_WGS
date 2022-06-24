@@ -17,7 +17,6 @@ itv50 = ['%.4d'%(itv) for itv in range(1, 50+1)]
 
 rule all:
     input:
-        expand("02.Alignment/Level3/{sample}/{sample}.sort.md.bam", sample = sampledic.keys()),
         expand("02.Alignment/chrM/{sample}/{sample}.bam", sample = sampledic.keys()),
         expand("02.Alignment/Level3/{sample}/{sample}.BQSR.metrics", sample = sampledic.keys()),
         expand("02.Alignment/Level3/{sample}/{sample}.BQSR.bam.flagstat", sample = sampledic.keys()),
@@ -87,7 +86,7 @@ rule Bwa_mem:
         sambambasort=" --tmpdir /lscratch/$SLURM_JOB_ID "
     threads: 32
     resources: 
-        mem = '32g',
+        mem = '48g',
         extra = ' --gres=lscratch:200 '
     shell:
         "module load {config[modules][bwa]} {config[modules][gatk]} {config[modules][sambamba]} \n"
@@ -95,13 +94,13 @@ rule Bwa_mem:
         " {params.bwa} "
         " {config[references][bwaidx]} "
         " {input.read1} {input.read2} 2> {log.err} |"
-        "gatk SortSam --java-options -Xmx30g "
+        "gatk SortSam --java-options \"-Djava.io.tmpdir=/lscratch/$SLURM_JOBID -Xms30G -Xmx30G -XX:ParallelGCThreads=2\" "
         "  --MAX_RECORDS_IN_RAM 5000000 "
         "  -I /dev/stdin "
         "  --SORT_ORDER coordinate "
         "  --TMP_DIR /lscratch/$SLURM_JOB_ID/ "
         "  -O /dev/stdout  2>> {log.err} |"
-        "gatk SetNmMdAndUqTags --java-options -Xmx30g "
+        "gatk SetNmMdAndUqTags --java-options \"-Djava.io.tmpdir=/lscratch/$SLURM_JOBID -Xms30G -Xmx30G -XX:ParallelGCThreads=2\" "
         "  --INPUT /dev/stdin "
         "  --OUTPUT {output.bam} "
         "  --REFERENCE_SEQUENCE {config[references][fasta]}"
@@ -275,6 +274,7 @@ rule BQSR_mergeB:
           -t {threads} \
           {output.bam} \
           {inputs} >> {log.out} 2>> {log.err}
+        sambamba index -t {threads} {output.bam}
         """
         )
 
@@ -434,7 +434,7 @@ rule HCmerge:
     threads:  4
     resources:
         mem  = '24g',
-        extra = ' --gres=lscratch:50 ',
+        extra = ' --gres=lscratch:200 ',
     run:
         inputvcfs = " ".join("-I {}".format(in_) for in_ in input.vcf),
         inputbams = " ".join(" {}".format(in_) for in_ in input.bam),
@@ -449,6 +449,7 @@ rule HCmerge:
           {params.tmpbam} \
           {inputbams} >> {log.out} 2>> {log.err}
         sambamba sort -t {threads} \
+          --tmpdir /lscratch/$SLURM_JOB_ID \
           -o {output.gbam} \
           {params.tmpbam} >> {log.out} 2>> {log.err}
         gatk --java-options " -Xms20G -Xmx20G  -Djava.io.tmpdir=/lscratch/$SLURM_JOB_ID -XX:ParallelGCThreads=2" \
@@ -660,9 +661,11 @@ rule Delly:
     input:
         bam="02.Alignment/Level3/{sample}/{sample}.BQSR.bam",
     output:
-        sv=  "04.SV.Delly/{sample}/{sample}.delly.sv.bcf",
+        sv=  temp("04.SV.Delly/{sample}/{sample}.delly.sv.bcf"),
+        svi=  temp("04.SV.Delly/{sample}/{sample}.delly.sv.bcf.csi"),
         svgz="04.SV.Delly/{sample}/{sample}.delly.sv.vcf.gz",
-        cnv= "05.CNV.Delly/{sample}/{sample}.delly.cnv.bcf",
+        cnv= temp("05.CNV.Delly/{sample}/{sample}.delly.cnv.bcf"),
+        cnvi= temp("05.CNV.Delly/{sample}/{sample}.delly.cnv.bcf.csi"),
         cvgz="05.CNV.Delly/{sample}/{sample}.delly.cnv.vcf.gz",
     params:
         svdir = "04.SV.Delly/{sample}",
@@ -677,13 +680,13 @@ rule Delly:
     shell:
         """
         module load {config[modules][delly]} {config[modules][bcftools]} {config[modules][samtools]}
-        cd {params.svdir}
+        cd {config[workdir]}/{params.svdir}
         delly call \
           -g {config[references][fasta]} \
           -x {config[references][delly]}/human.hg38.excl.tsv \
           -o {config[workdir]}/{output.sv} \
           {config[workdir]}/{input.bam} > {log.out} 2> {log.err}
-        cd {params.cnvdir}
+        cd {config[workdir]}/{params.cnvdir}
         delly cnv \
           -g {config[references][fasta]} \
           -m {config[references][delly]}/Homo_sapiens.GRCh38.dna.primary_assembly.fa.r101.s501.blacklist.gz \
@@ -725,6 +728,8 @@ rule Canvas:
           -o {wildcards.sample} >> {log.out} 2>> {log.err}
         ls -l {wildcards.sample} >> {log.out} 2>> {log.err}
         tabix -p vcf {wildcards.sample}/CNV.vcf.gz >> {log.out} 2>> {log.err}
+        rm -rf {wildcards.sample}/TempCNV_{wildcards.sample}
+        rm -rf {wildcards.sample}/VisualizationTemp{wildcards.sample}
         rm -rf {wildcards.sample}/TempCNV >> {log.out} 2>> {log.err}
         """
         
