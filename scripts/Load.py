@@ -12,8 +12,8 @@ def samplesheet(sspath):
     lib = {}
     run = {}
     for i in df.index:
-        ss = df.loc[i,'SM']
-        li = df.loc[i,'LB']
+        ss = str(df.loc[i,'SM'])
+        li = str(df.loc[i,'LB'])
         if ss not in sample:
             sample[ss] = []
         if li not in lib:
