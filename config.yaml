@@ -2,7 +2,7 @@ samplesheet:
     samplesheet.tsv
 
 workdir:
-    /data/yuk5/project/1.FPDMM/04.WGS/Batch_test_split
+    /data/yuk5/project/13.WGS_to_feed_twist/01.Align
 
 references:
     species:  homo_sapiens
@@ -13,6 +13,8 @@ references:
     fadict:   /data/yuk5/pipeline/wgs_germline/ref/gatk_bundle_hg38_v0/Homo_sapiens_assembly38.fasta.dict
     itvlist:  /data/yuk5/pipeline/wgs_germline/ref/gatk_bundle_hg38_v0/wgs_evaluation_regions.hg38.interval_list
     wgscallingitv: /data/yuk5/pipeline/wgs_germline/ref/gatk_bundle_hg38_v0/wgs_calling_regions.hg38.interval_list
+    wgscovitv: /data/yuk5/pipeline/wgs_germline/ref/gatk_bundle_hg38_v0/wgs_coverage_regions.hg38.interval_list
+    hcitv:     /data/yuk5/pipeline/wgs_germline/ref/gatk_bundle_hg38_v0/scattered_calling_intervals
     wesbed:   /data/yuk5/pipeline/wxs_phase1/ref/IDT_xGen_Exome_Research_Panel/hg38/xGen_Exome_Research_Panel.targets.hg38.bed
     flankbed: /data/yuk5/pipeline/wxs_phase1/ref/IDT_xGen_Exome_Research_Panel/hg38/xGen_Exome_Research_Panel.targets.withflank150.hg38.bed
     flankbedgz: /data/yuk5/pipeline/wxs_phase1/ref/IDT_xGen_Exome_Research_Panel/hg38/xGen_Exome_Research_Panel.targets.withflank150.hg38.bed.gz
@@ -26,7 +28,10 @@ references:
     gatk_omni:   /data/yuk5/pipeline/wgs_germline/ref/gatk_bundle_hg38_v0/1000G_omni2.5.hg38.vcf.gz
     gatk_1000hc: /data/yuk5/pipeline/wgs_germline/ref/gatk_bundle_hg38_v0/1000G_phase1.snps.high_confidence.hg38.vcf.gz
     scramblefa: /data/yuk5/pipeline/wgs_germline/ref/SCRAMBLE/Homo_sapiens_assembly38.fasta
+    gridssfa:  /data/yuk5/pipeline/wgs_germline/gridss/Homo_sapiens_assembly38.fasta
     cnvkitpon: /data/yuk5/project/1.FPDMM/01.WES/PoN/current/cnvkit/pon.cnn
+    msipon: /data/yuk5/data/PanelOfNormal/wgs_nygc112.v1/msisensorpro/Homo_sapiens_assembly38.fasta.scan.list_baseline
+    blacklist: /data/yuk5/data/Blacklist/General_hg38_230721/Merge.exclude.bed
     blacklist_encode: /data/yuk5/data/GMultiMap/Blacklist.ENCODE/hg38.ENCFF356LFX.bed
     delly: /data/yuk5/pipeline/wgs_germline/delly
 modules:
@@ -58,8 +63,28 @@ bins:
     vcfanno: /data/yuk5/pipeline/vcf_annotation/vcf_annotation.v1.wxs.py
     gatk3: /data/yuk5/app/GATK_3.8-1/GenomeAnalysisTK.jar
 simg:
+    gsutil: /data/yuk5/singularity/google-cloud-sdk_166.0.0.simg
+    fastp: /data/yuk5/singularity/fastp_0.23.4.simg
+    bwa: /data/yuk5/singularity/bwa_0.7.17.simg
+    samtools: /data/yuk5/singularity/samtools_1.9.simg
+    sambamba: /data/yuk5/singularity/sambamba_1.0.simg
+    fgbio: /data/yuk5/singularity/fgbio_2.1.0.simg
+    gatk: /data/yuk5/singularity/GATK_4.4.0.0.simg
     scramble: /usr/local/apps/Scramble/1.0.1-32893ef/libexec/scramble-1.0.1-32893ef.sif
     cnvkit: /data/yuk5/app/CNVKIT/cnvkit_0.9.8.sif
-max-jobs-per-second: 1
-latency-wait: 120
-keep-going: true
+    freebayes: /data/yuk5/singularity/freebayes_1.3.6.simg
+    deepvariant: /data/yuk5/singularity/deepvariant_1.5.0.simg
+    mosdepth: /data/yuk5/singularity/mosdepth_0.3.3.simg
+    strelka: /data/yuk5/singularity/strelka_2.9.7.simg
+    manta: /data/yuk5/singularity/manta_1.6.0.simg
+    tiddit: /data/yuk5/singularity/tiddit_3.6.0.simg
+    gridss: /data/yuk5/singularity/gridss_2.13.2.simg
+    melt: /data/yuk5/singularity/melt_2.2.2.simg
+    msisensorpro: /data/yuk5/singularity/msisensor-pro_1.2.0.simg
+parameter:
+    itvfastp: 12
+    deepvariant_shards: 100
+    gridss_shards: 8
+    
+# singularity
+singularity: singularity run -B /data,/vf,/gpfs,/fdb,/spin1,/lscratch

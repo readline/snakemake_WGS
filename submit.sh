@@ -1,7 +1,8 @@
 #!/bin/bash
 snakedir=`pwd`
-module load snakemake samtools || exit 1
+module load snakemake || exit 1
 
+rm -rf logs/slurm
 mkdir -p logs/slurm
 sbcmd="sbatch --cpus-per-task={threads} --mem={resources.mem}"
 sbcmd+=" --time={cluster.time} --partition={cluster.partition}"

@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 
 def samplesheet(sspath):
-    df = pd.read_csv(sspath, sep='\t', usecols=range(15))
+    df = pd.read_csv(sspath, sep='\t', usecols=range(12))
     idx = []
     for i in df.index:
         idx.append('%s.%s.%s'%(df.loc[i,'SM'], df.loc[i,'LB'], df.loc[i,'PU']))
@@ -26,4 +26,8 @@ def samplesheet(sspath):
     return sample,lib,run
 
 if __name__ == '__main__':
-    print(samplesheet(sys.argv[1]))
+    result = samplesheet(sys.argv[1])
+    import json
+    for i in result:
+        print(json.dumps(i, indent=4, sort_keys=True))
+        print()
